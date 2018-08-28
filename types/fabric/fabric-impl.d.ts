@@ -851,6 +851,12 @@ interface IStaticCanvasOptions {
 	 * Indicates whether the browser can be scrolled when using a touchscreen and dragging on the canvas
 	 */
 	allowTouchScrolling?: boolean;
+
+	/**
+	 * When true, canvas is scaled by devicePixelRatio for better rendering on retina screens
+	 */
+	enableRetinaScaling?: boolean;
+
 	/**
 	 * Indicates whether this canvas will use image smoothing, this is on by default in browsers
 	 */
@@ -1645,11 +1651,6 @@ export class Group {
 	 */
 	destroy(): Group;
 	/**
-	 * Returns requested property
-	 * @param prop Property to get
-	 */
-	get(prop: string): any;
-	/**
 	 * Checks whether this group was moved (since `saveCoords` was called last)
 	 * @return true if an object was moved (since fabric.Group#saveCoords was called)
 	 */
@@ -1867,7 +1868,7 @@ export class Image {
 	 * @param [callback] Callback to invoke when image is created (newly created image is passed as a first argument)
 	 * @param [imgOptions] Options object
 	 */
-	static fromURL(url: string, callback?: (image: Image) => void, objObjects?: IObjectOptions): Image;
+	static fromURL(url: string, callback?: (image: Image) => void, imgOptions?: IImageOptions): Image;
 	/**
 	 * Creates an instance of fabric.Image from its object representation
 	 * @param object Object to create an instance from
@@ -2099,6 +2100,11 @@ interface IObjectOptions {
 	backgroundColor?: string;
 
 	/**
+	 * When `true`, object is cached on an additional canvas.
+	 */
+	objectCaching?: boolean;
+
+	/**
 	 * When defined, an object is rendered via stroke and this property specifies its color
 	 */
 	stroke?: string;
@@ -2249,6 +2255,11 @@ interface IObjectOptions {
 	 * Not used by fabric, just for convenience
 	 */
 	data?: any;
+
+    /**
+     * Describes the object's corner position in canvas object absolute properties.
+     */
+    aCoords?: {bl: Point, br: Point, tl: Point, tr: Point};
 }
 export interface Object extends IObservable<Object>, IObjectOptions, IObjectAnimation<Object> { }
 export class Object {
@@ -2668,9 +2679,11 @@ export class Object {
 	setCoords(): this;
 	/**
 	 * Returns coordinates of object's bounding rectangle (left, top, width, height)
+     * @param absoluteopt use coordinates without viewportTransform
+     * @param calculateopt use coordinates of current position instead of .oCoords / .aCoords
 	 * @return Object with left, top, width, height properties
 	 */
-	getBoundingRect(): { left: number; top: number; width: number; height: number };
+	getBoundingRect(absoluteopt?: boolean, calculateopt?: boolean): { left: number; top: number; width: number; height: number };
 	/**
 	 * Checks if object is fully contained within area of another object
 	 * @param other Object to test
